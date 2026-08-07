@@ -6,24 +6,24 @@
  * fires two hooks so any mailing plugin (FluentCRM, Mailchimp, MailPoet, ...)
  * can intercept and route through its own channels:
  *
- *   apply_filters('ffr_send_review_email', $payload)  -> return array('skip'=>true) to take over
- *   do_action('ffr_thankyou_email', $data)            -> fire-and-forget signal for email plugins
- *   do_action('ffr_review_request_email', $data)      -> same, for request sends
+ *   apply_filters('freer_reviews_send_review_email', $payload)  -> return array('skip'=>true) to take over
+ *   do_action('freer_reviews_thankyou_email', $data)            -> fire-and-forget signal for email plugins
+ *   do_action('freer_reviews_review_request_email', $data)      -> same, for request sends
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class FFR_Email {
+class Freer_Reviews_Email {
 
 	public static function init() {
 		// Review request sender exposed as a shortcode + admin action.
-		add_shortcode( 'freeflow_request_link', array( __CLASS__, 'link_shortcode' ) );
+		add_shortcode( 'freer_reviews_request_link', array( __CLASS__, 'link_shortcode' ) );
 	}
 
 	/** Settings accessor with sensible defaults. */
 	public static function settings() {
-		return wp_parse_args( get_option( 'ffr_settings', array() ), FFR_Admin::defaults() );
+		return wp_parse_args( get_option( 'freer_reviews_settings', array() ), Freer_Reviews_Admin::defaults() );
 	}
 
 	/** Send an email, respecting the pluggable-hook layer. Returns true if wp_mail handled it. */
@@ -40,7 +40,7 @@ class FFR_Email {
 		 * Return array('skip' => true) after dispatching through your own email
 		 * plugin to bypass wp_mail entirely.
 		 */
-		$payload = apply_filters( 'ffr_send_review_email', $payload );
+		$payload = apply_filters( 'freer_reviews_send_review_email', $payload );
 
 		if ( ! empty( $payload['skip'] ) ) {
 			return true;
@@ -59,12 +59,12 @@ class FFR_Email {
 	/** Thank-you email sent to a reviewer after submission. */
 	public static function thank_you( $post_id ) {
 		$s = self::settings();
-		if ( empty( $s['thankyou_enable'] ) && ! has_filter( 'ffr_thankyou_email' ) ) {
+		if ( empty( $s['thankyou_enable'] ) && ! has_filter( 'freer_reviews_thankyou_email' ) ) {
 			return;
 		}
 
-		$email = get_post_meta( $post_id, 'ffr_reviewer_email', true );
-		$name  = get_post_meta( $post_id, 'ffr_reviewer_name', true );
+		$email = get_post_meta( $post_id, 'freer_reviews_reviewer_email', true );
+		$name  = get_post_meta( $post_id, 'freer_reviews_reviewer_name', true );
 		if ( ! $email ) {
 			return;
 		}
@@ -81,7 +81,7 @@ class FFR_Email {
 		);
 
 		// Signal for email plugins.
-		do_action( 'ffr_thankyou_email', $data );
+		do_action( 'freer_reviews_thankyou_email', $data );
 
 		self::send( $email, $subject, $message );
 	}
@@ -99,10 +99,10 @@ class FFR_Email {
 			}
 			$subject = self::fill( $s['request_subject'], '' );
 			$message = self::fill( $s['request_message'], '' );
-			$message .= '<p><a href="' . esc_url( $url ) . '" style="display:inline-block;background:#7c5cff;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;">' . esc_html__( 'Leave a review', 'freeflow-reviews' ) . '</a></p>';
+			$message .= '<p><a href="' . esc_url( $url ) . '" style="display:inline-block;background:#7c5cff;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;">' . esc_html__( 'Leave a review', 'freer-reviews' ) . '</a></p>';
 
 			$data = array( 'to' => $email, 'subject' => $subject, 'message' => $message, 'review_url' => $url );
-			do_action( 'ffr_review_request_email', $data );
+			do_action( 'freer_reviews_review_request_email', $data );
 
 			self::send( $email, $subject, $message );
 			$sent++;
@@ -110,11 +110,11 @@ class FFR_Email {
 		return $sent;
 	}
 
-	/** [freeflow_request_link] returns the configured review URL (for CTAs). */
+	/** [freer_reviews_request_link] returns the configured review URL (for CTAs). */
 	public static function link_shortcode( $atts ) {
-		$atts = shortcode_atts( array( 'text' => __( 'Leave a review', 'freeflow-reviews' ) ), $atts, 'freeflow_request_link' );
+		$atts = shortcode_atts( array( 'text' => __( 'Leave a review', 'freer-reviews' ) ), $atts, 'freer_reviews_request_link' );
 		$s   = self::settings();
 		$url = ! empty( $s['review_page_url'] ) ? $s['review_page_url'] : home_url( '/' );
-		return '<a class="ffr-cta" href="' . esc_url( $url ) . '">' . esc_html( $atts['text'] ) . '</a>';
+		return '<a class="freer-reviews-cta" href="' . esc_url( $url ) . '">' . esc_html( $atts['text'] ) . '</a>';
 	}
 }

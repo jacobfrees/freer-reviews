@@ -1,7 +1,7 @@
 <?php
 /**
- * FreeFlow Reviews self-update via the FreeFlow Plugin Hub.
- * Pings https://jacobfrees.com/?ffhub_upd=freeflow-reviews and, if the hub
+ * Freer Reviews self-update via the Freer Plugin Hub.
+ * Pings https://jacobfrees.com/?ffhub_upd=freer-reviews and, if the hub
  * has a newer version, injects the update into the WP update transient so the
  * plugin updates itself from this site (no WordPress.org required).
  */
@@ -9,12 +9,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class FFR_Update {
+class Freer_Reviews_Update {
 
-	// Point at the FreeFlow Plugin Hub on Jacob Frees' site.
+	// Point at the Freer Plugin Hub on Jacob Frees' site.
 	const HUB  = 'https://jacobfrees.com';
-	const SLUG = 'freeflow-reviews';
-	const FILE = 'freeflow-reviews/freeflow-reviews.php';
+	const SLUG = 'freer-reviews';
+	const FILE = 'freer-reviews/freer-reviews.php';
 
 	public static function init() {
 		add_filter( 'pre_set_site_transient_update_plugins', array( __CLASS__, 'check' ) );

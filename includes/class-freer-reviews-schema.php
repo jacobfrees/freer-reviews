@@ -6,7 +6,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class FFR_Schema {
+class Freer_Reviews_Schema {
 
 	public static function init() {
 		// no-op; methods called from display
@@ -42,8 +42,8 @@ class FFR_Schema {
 	 * Print a single Review JSON-LD.
 	 */
 	public static function echo_review( $post_id, $item = null ) {
-		$rating = (int) get_post_meta( $post_id, 'ffr_rating', true );
-		$name   = get_post_meta( $post_id, 'ffr_reviewer_name', true );
+		$rating = (int) get_post_meta( $post_id, 'freer_reviews_rating', true );
+		$name   = get_post_meta( $post_id, 'freer_reviews_reviewer_name', true );
 		if ( ! $item ) {
 			$item = home_url( '/' );
 		}

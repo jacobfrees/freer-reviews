@@ -8,24 +8,24 @@
  *     the owner's Google credentials; the code fails safe and reports clearly.
  *  2) Manual import (JSON or CSV paste) so reviews always land even without API keys.
  *
- * Reviews are stored as ffr_review entries tagged source='google' and deduped by
+ * Reviews are stored as freer_reviews_review entries tagged source='google' and deduped by
  * the Google review id.
  */
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class FFR_Google {
+class Freer_Reviews_Google {
 
-	const OPT = 'ffr_google_state';
+	const OPT = 'freer_reviews_google_state';
 
 	public static function init() {
 		// Optional daily scheduled sync.
-		add_action( 'ffr_daily_google_sync', array( __CLASS__, 'run_scheduled' ) );
+		add_action( 'freer_reviews_daily_google_sync', array( __CLASS__, 'run_scheduled' ) );
 	}
 
 	public static function run_scheduled() {
-		$s = FFR_Email::settings();
+		$s = Freer_Reviews_Email::settings();
 		if ( ! empty( $s['google_auto_sync'] ) ) {
 			self::sync_from_google();
 		}
@@ -33,7 +33,7 @@ class FFR_Google {
 
 	/** Schedule daily cron if enabled. Call from settings save. */
 	public static function maybe_schedule( $enable ) {
-		$hook = 'ffr_daily_google_sync';
+		$hook = 'freer_reviews_daily_google_sync';
 		if ( $enable && ! wp_next_scheduled( $hook ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', $hook );
 		} elseif ( ! $enable ) {
@@ -46,12 +46,12 @@ class FFR_Google {
 	 * Returns array( 'ok' => bool, 'message' => string, 'imported' => int ).
 	 */
 	public static function sync_from_google() {
-		$s = FFR_Email::settings();
+		$s = Freer_Reviews_Email::settings();
 		$key = isset( $s['google_api_key'] ) ? trim( $s['google_api_key'] ) : '';
 		$pid = isset( $s['google_place_id'] ) ? trim( $s['google_place_id'] ) : '';
 
 		if ( ! $key || ! $pid ) {
-			return array( 'ok' => false, 'message' => __( 'Add a Google API key and place_id in Settings > Google Sync first.', 'freeflow-reviews' ) );
+			return array( 'ok' => false, 'message' => __( 'Add a Google API key and place_id in Settings > Google Sync first.', 'freer-reviews' ) );
 		}
 
 		$url = add_query_arg( array(
@@ -70,7 +70,7 @@ class FFR_Google {
 		$body = json_decode( wp_remote_retrieve_body( $resp ), true );
 
 		if ( 200 !== $code || empty( $body['result'] ) ) {
-			$msg = isset( $body['error_message'] ) ? $body['error_message'] : sprintf( __( 'Google returned HTTP %d.', 'freeflow-reviews' ), $code );
+			$msg = isset( $body['error_message'] ) ? $body['error_message'] : sprintf( __( 'Google returned HTTP %d.', 'freer-reviews' ), $code );
 			return array( 'ok' => false, 'message' => $msg );
 		}
 
@@ -79,7 +79,7 @@ class FFR_Google {
 
 		return array(
 			'ok' => true,
-			'message' => sprintf( __( 'Fetched %d Google reviews, imported %d new.', 'freeflow-reviews' ), count( $reviews ), $imported ),
+			'message' => sprintf( __( 'Fetched %d Google reviews, imported %d new.', 'freer-reviews' ), count( $reviews ), $imported ),
 		);
 	}
 
@@ -100,9 +100,9 @@ class FFR_Google {
 
 			// Dedupe.
 			$existing = get_posts( array(
-				'post_type'  => FFR_CPT,
+				'post_type'  => FREER_REVIEWS_CPT,
 				'post_status' => 'any',
-				'meta_key'   => 'ffr_google_review_id',
+				'meta_key'   => 'freer_reviews_google_review_id',
 				'meta_value' => $gid,
 				'numberposts' => 1,
 				'fields'     => 'ids',
@@ -111,7 +111,7 @@ class FFR_Google {
 				continue;
 			}
 
-			$id = FFR_Post_Type::create( array(
+			$id = Freer_Reviews_Post_Type::create( array(
 				'name'             => $name,
 				'rating'           => $rating,
 				'text'             => $text,
