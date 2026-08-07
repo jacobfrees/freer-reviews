@@ -1,0 +1,29 @@
+# Freer Reviews
+
+Unlimited groups of reviews and testimonials for WordPress. Free, forever.
+
+Freer Reviews turns WordPress into your own review engine. Create unlimited review groups, organize testimonials however you want, and run outreach. No per-review fee, no SaaS subscription.
+
+## Features
+
+- Unlimited review groups (by product, service, campaign, client)
+- Built for outreach collection
+- Shortcodes and blocks for display anywhere
+- Own your data: everything lives in your WordPress database
+
+## Requirements
+
+- WordPress 5.0+
+- PHP 7.2+
+
+## Installation
+
+1. Upload `freer-reviews` to `/wp-content/plugins/`, or install from the Plugin Directory.
+2. Activate through the Plugins screen.
+3. Open **Freer Reviews** in admin and create your first group.
+
+## License
+
+GPLv2 or later. Free to use, modify, and share.
+
+Part of the [Freer Stack](https://github.com/jacobfrees/freer-stack).
