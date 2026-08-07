@@ -26,7 +26,7 @@ class Freer_Reviews_Update {
 		}
 
 		// Query the hub's REST update channel (cache-proof).
-		$url  = trailingslashit( self::HUB ) . 'wp-json/ffhub/v1/update/' . self::SLUG . '/';
+		$url  = trailingslashit( self::HUB ) . 'wp-json/freer_hub/v1/update/' . self::SLUG . '/';
 		$resp = wp_remote_get( $url, array( 'timeout' => 8 ) );
 		if ( is_wp_error( $resp ) ) {
 			return $transient;
