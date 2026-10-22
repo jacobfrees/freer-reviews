@@ -14,6 +14,8 @@ class Freer_Reviews_Schema {
 
 	/**
 	 * Print AggregateRating JSON-LD. $item can be the site home or a specific entity.
+	 * Business @type is configurable (MedicalBusiness / EmergencyService recommended
+	 * for trauma + biohazard cleanup sites — generic LocalBusiness undersells the niche).
 	 */
 	public static function echo_aggregate( $rating, $count, $max = 5, $item = null ) {
 		if ( $count < 1 ) {
@@ -25,17 +27,52 @@ class Freer_Reviews_Schema {
 		$max = max( 1, min( 10, (int) $max ) );
 		$schema = array(
 			'@context'      => 'https://schema.org',
-			'@type'         => 'LocalBusiness',
+			'@type'         => self::business_type(),
 			'name'          => get_bloginfo( 'name' ),
 			'url'           => home_url( '/' ),
-			'aggregateRating' => array(
-				'@type'       => 'AggregateRating',
-				'ratingValue' => (string) round( $rating, 1 ),
-				'bestRating'  => (string) $max,
-				'ratingCount' => (string) $count,
-			),
+		);
+		$service_type = self::service_type();
+		if ( $service_type ) {
+			$schema['serviceType'] = $service_type;
+		}
+		$area = self::area_served();
+		if ( ! empty( $area ) ) {
+			$schema['areaServed'] = $area;
+		}
+		$schema['aggregateRating'] = array(
+			'@type'       => 'AggregateRating',
+			'ratingValue' => (string) round( $rating, 1 ),
+			'bestRating'  => (string) $max,
+			'ratingCount' => (string) $count,
 		);
 		echo '<script type="application/ld+json">' . wp_json_encode( $schema, JSON_UNESCAPED_SLASHES ) . '</script>';
+	}
+
+	/** Configured schema @type, defaulting to MedicalBusiness for the cleanup vertical. */
+	public static function business_type() {
+		$s = Freer_Reviews_Email::settings();
+		$t = isset( $s['schema_business_type'] ) ? trim( $s['schema_business_type'] ) : '';
+		return $t ? $t : 'MedicalBusiness';
+	}
+
+	/** Comma-separated serviceType string from settings, or ''. */
+	public static function service_type() {
+		$s = Freer_Reviews_Email::settings();
+		return isset( $s['schema_service_type'] ) ? trim( $s['schema_service_type'] ) : '';
+	}
+
+	/** areaServed array of Place entries (one per line in settings), or array(). */
+	public static function area_served() {
+		$s   = Freer_Reviews_Email::settings();
+		$raw = isset( $s['schema_area_served'] ) ? $s['schema_area_served'] : '';
+		$out = array();
+		foreach ( preg_split( '/[\r\n]+/', (string) $raw ) as $line ) {
+			$line = trim( wp_strip_all_tags( $line ) );
+			if ( '' !== $line ) {
+				$out[] = array( '@type' => 'AdministrativeArea', 'name' => $line );
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -50,7 +87,11 @@ class Freer_Reviews_Schema {
 		$schema = array(
 			'@context'   => 'https://schema.org',
 			'@type'      => 'Review',
-			'itemReviewed' => array( '@type' => 'Organization', 'name' => get_bloginfo( 'name' ) ),
+			'itemReviewed' => array(
+				'@type' => self::business_type(),
+				'name'  => get_bloginfo( 'name' ),
+				'url'   => home_url( '/' ),
+			),
 			'reviewRating' => array(
 				'@type'       => 'Rating',
 				'ratingValue' => (string) $rating,

@@ -27,8 +27,13 @@ class Freer_Reviews_Admin {
 			'thankyou_subject'  => __( 'Thank you, {name}!', 'freer-reviews' ),
 			'thankyou_message'  => __( "Hi {name},\n\nThank you for taking a moment to share your words. Feedback is how we all get better, and yours helps the whole community. Appreciate you.\n\nWith gratitude,\n{site}", 'freer-reviews' ),
 			'request_enable'    => 1,
-			'request_subject'   => __( "We'd love your honest feedback", 'freer-reviews' ),
-			'request_message'   => __( "Hi {name},\n\nIf {site} added something to your world, a few honest words means a lot. It takes a minute and helps others find their way here too.\n\nThank you,\n{site}", 'freer-reviews' ),
+			'request_delay_days' => 7,
+			'request_subject'   => __( "Help other families find the right help", 'freer-reviews' ),
+			'request_message'   => __( "Hi {name},\n\nIt's been about a week since {site} was there for you — we hope things have settled. If you have a moment, a few honest words would help other families find the right help when they need it most. It takes a minute, and it means a great deal.\n\nThank you,\n{site}", 'freer-reviews' ),
+			// Structured data (schema.org) — biohazard/cleanup vertical defaults.
+			'schema_business_type' => 'MedicalBusiness',
+			'schema_service_type'  => __( 'unattended death cleanup, crime scene cleanup, decomposition cleanup, blood cleanup, fentanyl decontamination, hoarding remediation', 'freer-reviews' ),
+			'schema_area_served'   => '',
 		);
 	}
 
@@ -92,8 +97,13 @@ class Freer_Reviews_Admin {
 		$out['thankyou_subject'] = sanitize_text_field( isset( $in['thankyou_subject'] ) ? $in['thankyou_subject'] : $d['thankyou_subject'] );
 		$out['thankyou_message'] = sanitize_textarea_field( isset( $in['thankyou_message'] ) ? $in['thankyou_message'] : $d['thankyou_message'] );
 		$out['request_enable']  = ! empty( $in['request_enable'] ) ? 1 : 0;
+		$out['request_delay_days'] = isset( $in['request_delay_days'] ) ? max( 0, min( 90, absint( $in['request_delay_days'] ) ) ) : 7;
 		$out['request_subject'] = sanitize_text_field( isset( $in['request_subject'] ) ? $in['request_subject'] : $d['request_subject'] );
 		$out['request_message'] = sanitize_textarea_field( isset( $in['request_message'] ) ? $in['request_message'] : $d['request_message'] );
+		// Structured data.
+		$out['schema_business_type'] = sanitize_text_field( isset( $in['schema_business_type'] ) ? $in['schema_business_type'] : $d['schema_business_type'] );
+		$out['schema_service_type']  = sanitize_text_field( isset( $in['schema_service_type'] ) ? $in['schema_service_type'] : $d['schema_service_type'] );
+		$out['schema_area_served']   = sanitize_textarea_field( isset( $in['schema_area_served'] ) ? $in['schema_area_served'] : $d['schema_area_served'] );
 		// Protection (captcha on by default).
 		$out['captcha_enable']   = ! empty( $in['captcha_enable'] ) ? 1 : 0;
 		$out['turnstile_site']   = sanitize_text_field( isset( $in['turnstile_site'] ) ? $in['turnstile_site'] : '' );
@@ -248,6 +258,7 @@ class Freer_Reviews_Admin {
 					<h2><?php esc_html_e( 'Review request (send to past customers)', 'freer-reviews' ); ?></h2>
 					<table class="form-table">
 						<tr><th><?php esc_html_e( 'Review page URL', 'freer-reviews' ); ?></th><td><input type="url" class="regular-text" name="freer_reviews_settings[review_page_url]" value="<?php echo esc_attr( $s['review_page_url'] ); ?>" /></td></tr>
+						<tr><th><?php esc_html_e( 'Delay before request', 'freer-reviews' ); ?></th><td><input type="number" min="0" max="90" step="1" name="freer_reviews_settings[request_delay_days]" value="<?php echo esc_attr( $s['request_delay_days'] ); ?>" /> <?php esc_html_e( 'days after the thank-you', 'freer-reviews' ); ?><p class="description"><?php esc_html_e( 'Automatically sends the review request once the crisis has passed. 7 days is the sweet spot. Set 0 to disable the automatic ask.', 'freer-reviews' ); ?></p></td></tr>
 						<tr><th><?php esc_html_e( 'Subject', 'freer-reviews' ); ?></th><td><input type="text" class="regular-text" name="freer_reviews_settings[request_subject]" value="<?php echo esc_attr( $s['request_subject'] ); ?>" /></td></tr>
 						<tr><th><?php esc_html_e( 'Message', 'freer-reviews' ); ?></th><td><textarea class="large-text code" rows="6" name="freer_reviews_settings[request_message]"><?php echo esc_textarea( $s['request_message'] ); ?></textarea></td></tr>
 					</table>
@@ -278,8 +289,17 @@ class Freer_Reviews_Admin {
 								<input type="password" class="regular-text" name="freer_reviews_settings[turnstile_secret]" value="<?php echo esc_attr( $s['turnstile_secret'] ); ?>" placeholder="1x0000000..." autocomplete="off" />
 								<p class="description" style="margin:.2rem 0 0;"><?php esc_html_e( 'Secret key — free from Cloudflare (dash.cloudflare.com → Turnstile). Leave blank to use the built-in click check.', 'freer-reviews' ); ?></p>
 							</td></tr>
-						</table>
-					<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Save', 'freer-reviews' ); ?></button></p>
+							<tr><th><?php esc_html_e( 'Structured data (schema.org)', 'freer-reviews' ); ?></th>
+								<td>
+									<p class="description" style="margin:0 0 .4rem;"><?php esc_html_e( 'Schema @type used for review rich results. Biohazard/trauma cleanup sites should use MedicalBusiness or EmergencyService, not generic LocalBusiness.', 'freer-reviews' ); ?></p>
+									<input type="text" class="regular-text" name="freer_reviews_settings[schema_business_type]" value="<?php echo esc_attr( $s['schema_business_type'] ); ?>" placeholder="MedicalBusiness" />
+									<p class="description" style="margin:.6rem 0 .4rem;"><?php esc_html_e( 'serviceType — comma-separated services that populate the schema:', 'freer-reviews' ); ?></p>
+									<input type="text" class="large-text" name="freer_reviews_settings[schema_service_type]" value="<?php echo esc_attr( $s['schema_service_type'] ); ?>" />
+									<p class="description" style="margin:.6rem 0 .4rem;"><?php esc_html_e( 'areaServed — one city/county per line (every suburb and service area, not just home base):', 'freer-reviews' ); ?></p>
+									<textarea class="large-text code" rows="5" name="freer_reviews_settings[schema_area_served]" placeholder="Raleigh&#10;Durham&#10;Wake County"><?php echo esc_textarea( $s['schema_area_served'] ); ?></textarea>
+								</td></tr>
+							</table>
+							<p><button type="submit" class="button button-primary"><?php esc_html_e( 'Save', 'freer-reviews' ); ?></button></p>
 				<?php endif; ?>
 			</form>
 		</div>
